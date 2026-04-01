@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS diabecare; 
+
+USE diabecare;
+
+CREATE TABLE admins (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
+    pin VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

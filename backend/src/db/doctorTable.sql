@@ -1,0 +1,12 @@
+CREATE DATABASE IF NOT EXISTS diabecare; 
+
+USE diabecare;
+
+CREATE TABLE doctors (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(20),
+    pin VARCHAR(255), -- hashed
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
