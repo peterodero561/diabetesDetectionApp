@@ -14,7 +14,7 @@ import { BlurView } from 'expo-blur';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 
-const backgroundImage = { uri: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' };
+const backgroundImage = require('../assets/login-pic.png');
 
 const LoginSignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [isLogin, setIsLogin] = useState(true);
