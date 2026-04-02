@@ -1,2 +1,2 @@
-export const API_BASE_URL = 'https://your-api-domain.com/api'; // Change to your actual backend URL
-export const TOKEN_KEY = 'authToken'; // Key for AsyncStorage
+export const API_BASE_URL = 'http://197.248.215.13:5000/api'; // backend URL
+export const TOKEN_KEY = 'authToken';

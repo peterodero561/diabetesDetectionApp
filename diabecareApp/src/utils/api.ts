@@ -1,74 +1,77 @@
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, TOKEN_KEY } from './constants';
-import { User } from '../types'; // adjust path as needed
+import { TOKEN_KEY, API_BASE_URL } from './constants';
 
-// Helper to get stored token
-const getToken = async () => {
-  return await AsyncStorage.getItem(TOKEN_KEY);
-};
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
 
-// Helper to handle fetch with JSON and optional auth
-const request = async <T>(
-  endpoint: string,
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
-  data?: any,
-  requiresAuth = false
-): Promise<T> => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  if (requiresAuth) {
-    const token = await getToken();
-    if (!token) throw new Error('No auth token found');
-    headers['Authorization'] = `Bearer ${token}`;
+// Request interceptor to add token
+apiClient.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  const config: RequestInit = {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-  };
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  const responseData = await response.json();
-
-  if (!response.ok) {
-    // You can throw a custom error with message from server
-    throw new Error(responseData.message || 'API request failed');
+// Response interceptor to handle 401 – clear token
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      await AsyncStorage.removeItem(TOKEN_KEY);
+      // Optionally trigger a logout event
+    }
+    return Promise.reject(error);
   }
+);
 
-  return responseData;
-};
-
-// ===== AUTH ENDPOINTS =====
-
-interface LoginResponse {
-  user: User;
-  token: string;
+// Types
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  type: 'admin' | 'doctor' | 'patient';
+  doctor_id?: number;  // only for patients
+  created_at: string;
 }
 
-export const login = async (email: string, pin: string): Promise<LoginResponse> => {
-  // Assuming your API expects email and password (pin)
-  return request<LoginResponse>('/auth/login', 'POST', { email, password: pin });
+// Login
+export const login = async (email: string, pin: string): Promise<{ user: User; token: string }> => {
+  const response = await apiClient.post('/auth/login', { email, pin });
+  return response.data;
 };
 
-interface RegisterResponse {
-  user: User;
-  token: string;
-}
-
-export const register = async (userData: Partial<User>): Promise<RegisterResponse> => {
-  // Expect userData to contain email, name, pin, etc.
-  return request<RegisterResponse>('/auth/register', 'POST', userData);
-};
-
-// ===== USER ENDPOINTS =====
-
+// Get current user (using token)
 export const getCurrentUser = async (): Promise<User> => {
-  return request<User>('/users/me', 'GET', undefined, true);
+  const response = await apiClient.get('/auth/me');
+  return response.data;
 };
 
-export const updateUser = async (userId: string, updates: Partial<User>): Promise<User> => {
-  return request<User>(`/users/${userId}`, 'PATCH', updates, true);
+// Update user profile (works for patient)
+export const updateUser = async (userId: number, updates: Partial<User>): Promise<User> => {
+  const response = await apiClient.put(`/patients/${userId}`, updates);
+  return response.data;
+};
+
+// Optional: create patient (only doctor and patient)
+export const createPatient = async (patientData: Partial<User> & { pin: string }): Promise<User> => {
+  const response = await apiClient.post('/patients', patientData);
+  return response.data;
+};
+
+export const register = async (userData: {
+  name: string;
+  email: string;
+  phone: string;
+  pin: string;
+  doctorEmail?: string;
+}): Promise<{ user: User; token: string }> => {
+  console.log('register')
+  const response = await apiClient.post('/patient-self/register', userData);
+  console.log(response)
+  return response.data;
 };

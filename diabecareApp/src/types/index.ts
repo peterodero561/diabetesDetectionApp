@@ -1,18 +1,12 @@
-export type User = {
-  id: string;
-  email: string;
+export interface User {
+  id: number;
   name: string;
-  profilePic?: string; // uri
-  riskLevel: 'high' | 'medium' | 'low';
-  // medical
-  latestBMI?: number;
-  latestGlucose?: number;
-  latestBP?: string;
-  doctorName?: string;
-  // emergency
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-};
+  email: string;
+  phone?: string;
+  type: 'admin' | 'doctor' | 'patient';
+  doctor_id?: number;
+  created_at: string;
+}
 
 export type HealthData = {
   date: string;

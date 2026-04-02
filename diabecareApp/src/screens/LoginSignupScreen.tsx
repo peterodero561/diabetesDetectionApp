@@ -8,44 +8,79 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
+import Toast from 'react-native-toast-message';
 
 const backgroundImage = require('../assets/login-pic.png');
 
 const LoginSignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [pin, setPin] = useState('');
-  const { signIn, signUp } = useAuth();
+  const [doctorEmail, setDoctorEmail] = useState('');
+  const { signIn, signUp, isLoading } = useAuth();
 
-  const handleSubmit = async () => {
+  // Helper: format name – trim, remove extra spaces, capitalize each word
+  const formatName = (name: string): string => {
+    return name
+      .trim()
+      .replace(/\s+/g, ' ')               // multiple spaces → single space
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const handleLogin = async () => {
+    if (!email || !pin) {
+      Toast.show({ type: 'error', text1: 'Missing fields', text2: 'Please enter email and PIN' });
+      return;
+    }
+    const success = await signIn(email, pin);
+    if (success) {
+      navigation.replace('Main');
+    }
+  };
+
+  const handleSignup = async () => {
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone || !pin) {
+      Toast.show({ type: 'error', text1: 'Missing fields', text2: 'Please fill all required fields' });
+      return;
+    }
+    if (pin.length < 4) {
+      Toast.show({ type: 'error', text1: 'Invalid PIN', text2: 'PIN must be at least 4 digits' });
+      return;
+    }
+
+    // Format first and last name, then combine
+    const formattedFirstName = formatName(firstName);
+    const formattedLastName = formatName(lastName);
+    const fullName = `${formattedFirstName} ${formattedLastName}`;
+
+    const success = await signUp({
+      name: fullName,
+      email,
+      phone,
+      pin,
+      doctorEmail: doctorEmail.trim() || undefined,
+    });
+    if (success) {
+      navigation.replace('Main');
+    }
+  };
+
+  const handleSubmit = () => {
     if (isLogin) {
-      if (!email || !pin) {
-        Alert.alert('Error', 'Please fill all fields');
-        return;
-      }
-      const success = await signIn(email, pin);
-      if (success) {
-        navigation.replace('Main');
-      } else {
-        Alert.alert('Error', 'Invalid credentials');
-      }
+      handleLogin();
     } else {
-      if (!email || !name || !pin) {
-        Alert.alert('Error', 'Please fill all fields');
-        return;
-      }
-      const success = await signUp({ email, name });
-      if (success) {
-        navigation.replace('Main');
-      } else {
-        Alert.alert('Error', 'Sign up failed');
-      }
+      handleSignup();
     }
   };
 
@@ -59,36 +94,76 @@ const LoginSignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <Text style={styles.title}>{isLogin ? 'Sign In' : 'Sign Up'}</Text>
 
           {!isLogin && (
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#666"
-              value={name}
-              onChangeText={setName}
-            />
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="First Name *"
+                placeholderTextColor="#666"
+                value={firstName}
+                onChangeText={setFirstName}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name *"
+                placeholderTextColor="#666"
+                value={lastName}
+                onChangeText={setLastName}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone Number *"
+                placeholderTextColor="#666"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
+            </>
           )}
+
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Email *"
             placeholderTextColor="#666"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
+
           <TextInput
             style={styles.input}
-            placeholder="PIN (4 digits)"
+            placeholder="PIN * (4+ digits)"
             placeholderTextColor="#666"
             value={pin}
             onChangeText={setPin}
             secureTextEntry
             keyboardType="numeric"
-            maxLength={4}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>{isLogin ? 'Sign In' : 'Sign Up'}</Text>
+          {!isLogin && (
+            <TextInput
+              style={styles.input}
+              placeholder="Doctor's Email (optional)"
+              placeholderTextColor="#666"
+              value={doctorEmail}
+              onChangeText={setDoctorEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          )}
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>{isLogin ? 'Sign In' : 'Sign Up'}</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
@@ -112,7 +187,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   blurContainer: {
-    width: '80%',
+    width: '85%',
     padding: 20,
     borderRadius: 20,
     overflow: 'hidden',
@@ -126,16 +201,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
+    padding: 14,
+    marginBottom: 12,
     fontSize: 16,
     color: Colors.darkGray,
   },
   button: {
     backgroundColor: Colors.primaryGreen,
-    padding: 15,
+    padding: 14,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,

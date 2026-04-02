@@ -1,16 +1,23 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, use } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from '../types';
-import * as api from '../utils/api';      // Assume this module contains login, register, getCurrentUser
-import { TOKEN_KEY } from '../utils/constants'; // e.g., 'authToken'
+import { User } from '../types'; // adjust path
+import * as api from '../utils/api';
+import { TOKEN_KEY } from '../utils/constants';
+import Toast from 'react-native-toast-message';
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, pin: string) => Promise<boolean>;
-  signUp: (userData: Partial<User>) => Promise<boolean>;
+  signUp: (userData: {
+    name: string;
+    email: string;
+    phone: string;
+    pin: string;
+    doctorEmail?: string;
+  }) => Promise<boolean>;
   signOut: () => void;
-  updateUser: (updated: Partial<User>) => void;
+  updateUser: (updates: Partial<User>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,17 +26,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On app start, try to load user from token
+  // Load user from token on app start
   useEffect(() => {
     const bootstrap = async () => {
       try {
         const token = await AsyncStorage.getItem(TOKEN_KEY);
         if (token) {
-          const userData = await api.getCurrentUser(); // fetch user profile using token
+          const userData = await api.getCurrentUser();
           setUser(userData);
         }
       } catch (error) {
-        // Token invalid or network error – clear token
+        console.error('Auth bootstrap error:', error);
         await AsyncStorage.removeItem(TOKEN_KEY);
         setUser(null);
       } finally {
@@ -45,23 +52,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { user: userData, token } = await api.login(email, pin);
       await AsyncStorage.setItem(TOKEN_KEY, token);
       setUser(userData);
+      Toast.show({ type: 'success', text1: 'Welcome back!', text2: `Hello ${userData.name}` });
       return true;
-    } catch (error) {
-      // Handle error (show alert, etc.)
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Login failed';
+      Toast.show({ type: 'error', text1: 'Login Error', text2: message });
+      console.log('here')
+      console.error('Login error:', error.response?.data?.message || error.message);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUp = async (userData: Partial<User>): Promise<boolean> => {
+  const signUp = async (userData: {
+    name: string;
+    email: string;
+    phone: string;
+    pin: string;
+    doctorEmail?: string;
+  }): Promise<boolean> => {
     setIsLoading(true);
     try {
+      console.log('signUp')
       const { user: newUser, token } = await api.register(userData);
+      console.log(token)
       await AsyncStorage.setItem(TOKEN_KEY, token);
+      console.log('after aync')
       setUser(newUser);
+      Toast.show({ type: 'success', text1: 'Account created!', text2: `Welcome ${newUser.name}` });
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Registration failed';
+      Toast.show({ type: 'error', text1: 'Signup Error', text2: message });
       return false;
     } finally {
       setIsLoading(false);
@@ -72,17 +95,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     await AsyncStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    Toast.show({ type: 'info', text1: 'Signed out', text2: 'See you next time!' });
     setIsLoading(false);
   };
 
-  const updateUser = async (updated: Partial<User>) => {
+  const updateUser = async (updates: Partial<User>) => {
     if (!user) return;
     setIsLoading(true);
     try {
-      const updatedUser = await api.updateUser(user.id, updated);
+      const updatedUser = await api.updateUser(user.id, updates);
       setUser(updatedUser);
+      Toast.show({ type: 'success', text1: 'Profile updated' });
     } catch (error) {
-      // Handle error
+      Toast.show({ type: 'error', text1: 'Update failed' });
     } finally {
       setIsLoading(false);
     }
