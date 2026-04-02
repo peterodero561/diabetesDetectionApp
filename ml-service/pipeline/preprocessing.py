@@ -1,43 +1,35 @@
 import pandas as pd
+import numpy as np
 import joblib
-from sklearn.preprocessing import StandardScaler
-
-FEATURE_COLUMNS = [
-    'Pregnancies',
-    'Glucose',
-    'BloodPressure',
-    'SkinThickness',
-    'Insulin',
-    'BMI',
-    'DiabetesPedigreeFunction',
-    'Age'
-]
 
 class DiabetesPreprocessor:
-    '''Preprocessing of data from api'''
     def __init__(self):
-        self.scaler = StandardScaler()
+        self.scaler = None
+        self.feature_columns = None
+        self.log_columns = None
 
-    def fit(self, X):
-        '''Scale the column features'''
-        X = X[FEATURE_COLUMNS]
-        self.scaler.fit(X)
+    def load(self, #scaler_path='model/scaler.pkl', 
+             features_path='model/feature_names.pkl',
+             log_cols_path='model/log_columns.pkl'):
+        #self.scaler = joblib.load(scaler_path)
+        self.feature_columns = joblib.load(features_path)
+        self.log_columns = joblib.load(log_cols_path)
 
     def transform(self, data):
-        '''data transformation'''
         if isinstance(data, dict):
             data = pd.DataFrame([data])
 
-        # enforce column order
-        data = data.reindex(columns=FEATURE_COLUMNS)
+        # Apply log transformation to specified columns
+        data = data.copy()
+        for col in self.log_columns:
+            if col in data.columns:
+                data[col] = np.log1p(data[col])  # log(1+x) to handle zeros
 
-        # fill missing
+        # Reorder columns to match training order
+        data = data.reindex(columns=self.feature_columns, fill_value=0)
+
+        # Fill missing values (optional, use training median if needed)
         data = data.fillna(data.mean())
 
-        return self.scaler.transform(data)
-    
-    def save(self, path='model/scaler.pkl'):
-        joblib.dump(self.scaler, path)
-
-    def load(self, path='model/scaler.pkl'):
-        self.scaler = joblib.load(path)
+        # Scale
+        return data.values

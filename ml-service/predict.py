@@ -1,9 +1,13 @@
-import joblib
+#import joblib
 from pipeline.preprocessing import DiabetesPreprocessor
 
-model = joblib.load('model/catboost_model.pkl')
+#model = joblib.load('model/diabetes_model.cbm')
 
-preprocessor = DiabetesPreprocessor
+from catboost import CatBoostClassifier
+model = CatBoostClassifier()
+model.load_model('model/diabetes_model.cbm')
+
+preprocessor = DiabetesPreprocessor()
 preprocessor.load()
 
 def predict_patient(data):

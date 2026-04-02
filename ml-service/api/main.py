@@ -1,7 +1,7 @@
-from fastapi import FastApi
+from fastapi import FastAPI
 from predict import predict_patient
 
-app = FastApi
+app = FastAPI()
 
 # route to confirm ML Service
 @app.get('/')
