@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '../constants/colors';
 import ChartCarousel from '../components/ChartCarousel';
 import FoodNewsTabs from '../components/FoodNewsTabs';
@@ -10,12 +10,9 @@ import { mockHealthData } from '../constants/mockData';
 const HomeScreen: React.FC = () => {
   const { healthData, addHealthData } = useData();
   const { user } = useAuth();
-
-  // Use mock data if none exists
   const data = healthData.length > 0 ? healthData : mockHealthData;
 
   const handlePrediction = () => {
-    // Mock prediction based on latest data
     const latest = data[0];
     if (!latest) return;
     let risk = 'low';
@@ -24,8 +21,8 @@ const HomeScreen: React.FC = () => {
     Alert.alert('Risk Prediction', `Your current risk level is: ${risk.toUpperCase()}`);
   };
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+  const HeaderComponent = () => (
+    <>
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello, {user?.name || 'User'}</Text>
         <Text style={styles.riskBadge}>Risk: {user?.riskLevel || 'low'}</Text>
@@ -39,11 +36,22 @@ const HomeScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.section, { flex: 1 }]}>
-        <Text style={styles.sectionTitle}>Food & News</Text>
-        <FoodNewsTabs />
-      </View>
-    </ScrollView>
+      <Text style={[styles.sectionTitle, { marginLeft: 20, marginTop: 20 }]}>
+        Food & News
+      </Text>
+    </>
+  );
+
+  return (
+    <FlatList
+      style={styles.container}
+      data={[]}
+      renderItem={null}
+      keyExtractor={() => 'key'}
+      ListHeaderComponent={<HeaderComponent />}
+      ListFooterComponent={<FoodNewsTabs />}
+      showsVerticalScrollIndicator={false}
+    />
   );
 };
 

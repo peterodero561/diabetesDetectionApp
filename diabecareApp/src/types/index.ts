@@ -6,6 +6,7 @@ export interface User {
   type: 'admin' | 'doctor' | 'patient';
   doctor_id?: number;
   created_at: string;
+  doctor_name?: string;
 }
 
 export type HealthData = {

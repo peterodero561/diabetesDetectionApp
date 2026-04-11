@@ -7,60 +7,70 @@ const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor to add token
 apiClient.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Response interceptor to handle 401 – clear token
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      await AsyncStorage.removeItem(TOKEN_KEY);
-      // Optionally trigger a logout event
-    }
+    if (error.response?.status === 401) await AsyncStorage.removeItem(TOKEN_KEY);
     return Promise.reject(error);
   }
 );
 
-// Types
 export interface User {
   id: number;
   name: string;
   email: string;
   phone?: string;
   type: 'admin' | 'doctor' | 'patient';
-  doctor_id?: number;  // only for patients
+  doctor_id?: number;
+  doctor_name?: string;
   created_at: string;
 }
 
-// Login
-export const login = async (email: string, pin: string): Promise<{ user: User; token: string }> => {
+export interface MedicalRecord {
+  id: number;
+  patient_id: number;
+  pregnancies: number;
+  glucose: number;
+  blood_pressure: string;
+  skin_thickness: number;
+  insulin: number;
+  bmi: number;
+  diabetes_pedigree_function: number;
+  age: number;
+  created_at: string;
+}
+
+export interface Prediction {
+  id: number;
+  patient_id: number;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
+  created_at: string;
+}
+
+export const login = async (
+  email: string,
+  pin: string
+): Promise<{ user: User; token: string }> => {
   const response = await apiClient.post('/auth/login', { email, pin });
   return response.data;
 };
 
-// Get current user (using token)
 export const getCurrentUser = async (): Promise<User> => {
   const response = await apiClient.get('/auth/me');
   return response.data;
 };
 
-// Update user profile (works for patient)
-export const updateUser = async (userId: number, updates: Partial<User>): Promise<User> => {
-  const response = await apiClient.put(`/patients/${userId}`, updates);
-  return response.data;
-};
-
-// Optional: create patient (only doctor and patient)
-export const createPatient = async (patientData: Partial<User> & { pin: string }): Promise<User> => {
-  const response = await apiClient.post('/patients', patientData);
-  return response.data;
+export const updateUser = async (
+  userId: number,
+  updates: Partial<Pick<User, 'name' | 'email' | 'phone'>>
+): Promise<void> => {
+  await apiClient.put(`/patients/${userId}`, updates);
 };
 
 export const register = async (userData: {
@@ -70,8 +80,18 @@ export const register = async (userData: {
   pin: string;
   doctorEmail?: string;
 }): Promise<{ user: User; token: string }> => {
-  console.log('register')
   const response = await apiClient.post('/patient-self/register', userData);
-  console.log(response)
+  return response.data;
+};
+
+// Fetch all medical records for the logged-in patient
+export const getMyMedicalRecords = async (): Promise<MedicalRecord[]> => {
+  const response = await apiClient.get('/medical-records');
+  return response.data;
+};
+
+// Fetch latest prediction for the logged-in patient
+export const getMyPredictions = async (): Promise<Prediction[]> => {
+  const response = await apiClient.get('/prediction-records');
   return response.data;
 };

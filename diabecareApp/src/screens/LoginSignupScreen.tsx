@@ -43,9 +43,7 @@ const LoginSignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       return;
     }
     const success = await signIn(email, pin);
-    if (success) {
-      navigation.replace('Main');
-    }
+    // if (success) {navigation.replace('Main');}
   };
 
   const handleSignup = async () => {
@@ -71,9 +69,7 @@ const LoginSignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       pin,
       doctorEmail: doctorEmail.trim() || undefined,
     });
-    if (success) {
-      navigation.replace('Main');
-    }
+    // if (success) {navigation.replace('Main');}
   };
 
   const handleSubmit = () => {

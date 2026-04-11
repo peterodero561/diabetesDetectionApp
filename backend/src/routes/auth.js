@@ -5,7 +5,7 @@ const pool = require('../db/db');
 const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
 
-router.use(verifyToken);
+// router.use(verifyToken);
 
 router.post('/login', async (req, res) => {
   const { email, pin } = req.body;
