@@ -53,9 +53,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       Toast.show({ type: 'success', text1: 'Welcome back!', text2: `Hello ${userData.name}` });
       return true;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
-      Toast.show({ type: 'error', text1: 'Login Error', text2: message });
-      return false;
+      console.error('Login error:', error);
+      let message = 'Login failed. Please check your connection.';
+    if (error.response?.data?.message) {
+      message = error.response.data.message;
+    } else if (error.message) {
+      message = error.message;
+    }
+
+    Toast.show({
+      type: 'error',
+      text1: 'Login Error',
+      text2: message,
+      visibilityTime: 4000,
+    });
+    return false;
     } finally {
       setIsLoading(false);
     }
