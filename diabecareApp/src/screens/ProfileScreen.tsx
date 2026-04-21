@@ -12,12 +12,15 @@ import {
 } from 'react-native';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 import SyncButton from '../components/SyncButton';
 import * as ImagePicker from 'expo-image-picker';
-import { getMyMedicalRecords, getMyPredictions, MedicalRecord, Prediction } from '../utils/api';
+import { getMedicalRecords as getMyMedicalRecords, getPredictions as getMyPredictions, MedicalRecord, Prediction } from '../utils/api';
+
+const  defaultAvatar = require('../assets/user.png');
 
 const ProfileScreen: React.FC = () => {
-  const { user, updateUser, signOut, isLoading } = useAuth();
+  const { user, updateUser, signOut, isLoading, refreshUser } = useAuth();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -48,6 +51,12 @@ const ProfileScreen: React.FC = () => {
     };
     fetchMedicalData();
   }, [user]);
+
+//   useFocusEffect(
+//   React.useCallback(() => {
+//     refreshUser(); // pulls fresh user data from API
+//   }, [refreshUser])
+// );
 
   // Keep form in sync if user changes
   useEffect(() => {
@@ -97,7 +106,7 @@ const ProfileScreen: React.FC = () => {
       <View style={styles.profilePicContainer}>
         <TouchableOpacity onPress={pickImage} disabled={!editing}>
           <Image
-            source={{ uri: 'https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User' }}
+            source={defaultAvatar}
             style={styles.profilePic}
           />
           {editing && <Text style={styles.editPicText}>Change Photo</Text>}

@@ -9,7 +9,9 @@ async function predict(req, res){
         const result = await predictDiabetes(patientData)
 
         res.json({
-            result,
+            "risk": result.risk,
+            "probability": result.probability,
+            "prediction": result.prediction
         })
     }catch (err){
         console.error(err)

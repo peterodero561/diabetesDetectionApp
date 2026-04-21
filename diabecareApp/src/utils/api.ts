@@ -161,3 +161,5 @@ export const predictDiabetesRisk = async (
   );
   return response.data;
 };
+
+export default apiClient;
