@@ -197,6 +197,36 @@ const ProfileScreen: React.FC = () => {
                   {latestRecord?.blood_pressure || 'N/A'}
                 </Text>
               </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Age</Text>
+                <Text style={styles.value}>
+                  {latestRecord?.age || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Pregnancies</Text>
+                <Text style={styles.value}>
+                  {latestRecord?.pregnancies || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Insulin</Text>
+                <Text style={styles.value}>
+                  {latestRecord?.insulin || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Skin Thickness</Text>
+                <Text style={styles.value}>
+                  {latestRecord?.skin_thickness || 'N/A'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Diabetes Pedigree Function</Text>
+                <Text style={styles.value}>
+                  {latestRecord?.diabetes_pedigree_function || 'N/A'}
+                </Text>
+              </View>
               {user?.doctor_id && (
                 <View style={styles.infoRow}>
                   <Text style={styles.label}>Doctor ID</Text>
